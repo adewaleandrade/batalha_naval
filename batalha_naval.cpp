@@ -1,5 +1,4 @@
 #include "LedControl.h"
-LedControl lc = LedControl(12, 10, 11, 1); // Pins: DIN,CLK,CS, # of Display connected
 //LedControl lc = LedControl(5,6,7,1);  // Pins: DIN,CLK,CS, # of Display connected
 
 #define  CLEARLINE  B00000000
@@ -25,6 +24,8 @@ LedControl lc = LedControl(12, 10, 11, 1); // Pins: DIN,CLK,CS, # of Display con
 #define PORTAAVIAO 4
 
 #define MAXSHIPSIZE 5
+
+LedControl lc = LedControl(12, 10, 11, MAXPLAYERS ); // Pins: DIN,CLK,CS, # of Display connected
 
 unsigned long delaytime = 100;
 
@@ -114,14 +115,13 @@ void setup() {
    The MAX72XX is in power-saving mode on startup,
    we have to do a wakeup call
    */
-  lc.shutdown(0, false);
-  /* Set the brightness to a medium values */
-  lc.setIntensity(0, 5);
-  /* and clear the display */
-  lc.clearDisplay(0);
-  // put your setup code here, to run once:
-//  mapSetup(p1Map);
-  //mapSetup(p2Map);
+  for(int i = 0; i < MAXPLAYERS; i++){
+    lc.shutdown(i, false);
+    /* Set the brightness to a medium values */
+    lc.setIntensity(i, 5);
+    /* and clear the display */
+    lc.clearDisplay(i);
+  }
 
   //Buttons and Buzzer Setup
   pinMode(btnV, INPUT);
@@ -148,8 +148,14 @@ Serial.print("confirm btn: ");
     setPlayerMap();
   }
 
-  // showPlayerTurn(turnPlayer);
+  showPlayerTurn(turnPlayer);
 
+  
+  for (int i = 0; i < MAXPLAYERS; i++){
+    if( i != turnPlayer){
+      updateDisplay(turnPlayer-1,false);
+    }
+  }
   /*playerTurn();
   changePlayerTurn();
 
@@ -159,6 +165,10 @@ Serial.print("confirm btn: ");
 
   //  Serial.print("Button State: ");
   //  Serial.println(buttonState);
+
+}
+
+void playerTurn(int player){
 
 }
 
@@ -186,10 +196,10 @@ void setShip(int player) {
   bool shipStart = false;
   bool shipEnd = false;
 
-  updateDisplay(player, 0, true);
+  updateDisplay(player, true);
   while (! done) {
     blinkSelectedPoints(player - 1, shipStart);
-    moveCursor(player, 0);
+    moveCursor(player);
     
     if (digitalRead(btnC) == HIGH) {
     	Serial.print("confirm btn: ");
@@ -352,51 +362,9 @@ bool checkShipsCount(int player){
 	return true;
 }
 
-// bool checkHidroavioes(int player, int* shipCount){
-//   Serial.print("hidroavioes: ");
-//   Serial.println(shipCount);
-//   Serial.print("maxHidroavioes: ");
-//   Serial.println(MAXHIDROAVIOES);
-//   Serial.print("checkHidroavioes: ");
-// 	if(shipCount < MAXHIDROAVIOES){
-//     Serial.println("False");
-// 		return false;
-// 	}
-//   Serial.println("True");
-// 	return true;
-// }
-
-// bool checkSubmarines(int player){
-// 	if(globalShips[SUBMARINO][player-1] < MAXSUBMARINES){
-// 		return false;
-// 	}
-// 	return true;
-// }
-
-// bool checkCruzadores(int player){
-// 	if(globalShips[CRUZADOR][player-1] < MAXCRUZADORES){
-// 		return false;
-// 	}
-// 	return true;
-// }
-
-// bool checkEncouracados(int player){
-// 	if(globalShips[ENCOURACADO][player-1] < MAXENCOURACADOS){
-// 		return false;
-// 	}
-// 	return true;
-// }
-
-// bool checkPortaAvioes(int player){
-// 	if(globalShips[PORTAAVIAO][player-1] < MAXPORTAAVIOES){
-// 		return false;
-// 	}
-// 	return true;
-// }
-
 //print on the matrix the player's map
 void showPlayerMap(int player) {
-  clearScreen();
+  clearScreen(player-1);
   for (int i = 0; i < 8; i++) {
     for (int j = 0; j < 8; j++) {
       lc.setLed(0, i, j, maps[player - 1][i][j]);
@@ -425,7 +393,7 @@ void lightPlayerTurn(int turn) {
     pText = dispP2;
   }
 
-  clearScreen();
+  clearScreen(turn-1);
 
   for (int i = 0 ; i < 8; i++) {
     lc.setRow(0, i, pText[i]);
@@ -433,33 +401,33 @@ void lightPlayerTurn(int turn) {
 }
 
 
-void updateDisplay(int player, int lMatrix, bool cursor) {
-  clearScreen();
-  showPlayerMap(player);
+void updateDisplay(int player, bool cursor) {
+  clearScreen(player-1);
+  showPlayerMap(player-1);
   if (cursor) {
-    showCursor(lMatrix);
+    showCursor(player-1);
   }
 }
 
 // Limpa a matriz de leds
-void clearScreen() {
+void clearScreen(int matrix) {
   for (int i = 0 ; i < 8; i++) {
-    lc.setRow(0, i, B00000000);
+    lc.setRow(matrix, i, B00000000);
   }
   // delay(500);
 }
 
 // Espera um comando do jogador e atualiza a posição do cursor
-void moveCursor(int player, int matrix) {
+void moveCursor(int player) {
 	// Serial.println("moveCursor");
   if (digitalRead(btnV) == HIGH) {
     cursorRow = (cursorRow < 7) ? cursorRow+1 : 0;
-    updateDisplay(player, matrix, true);
+    updateDisplay(player, true);
   }
 
   if (digitalRead(btnH) == HIGH) {
     cursorCol = (cursorCol < 7) ? cursorCol+1 : 0;
-    updateDisplay(player, matrix, true);
+    updateDisplay(player, true);
     }
 }
 
