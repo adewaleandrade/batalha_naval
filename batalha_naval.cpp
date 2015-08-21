@@ -200,23 +200,23 @@ void setShip(int player) {
 			int size = getShipSize(shipStartRow, shipStartCol, shipEndRow, shipEndCol);
       Serial.print("ShipSize ");
       Serial.println(size);
-			bool maxShipCount = true;
+			bool maxShipClassCount = true;
 			switch (size){ // Verifica se o tipo de navio selecionado comporta um novo navio;
 				// Converter esse swtich numa função que recebe o player e o tamnaho da navio e faz as verificações.; @Lucas
 				case 1: // Macro Tamanho do Navio (HIDROAVIOES)
-					maxShipCount = checkHidroavioes(player);//
+					maxShipClassCount = checkHidroavioes(player);//
 					break;
 				case 2: 
-					maxShipCount = checkSubmarines(player);
+					maxShipClassCount = checkSubmarines(player);
 					break;
 				case 3:
-					maxShipCount = checkCruzadores(player);
+					maxShipClassCount = checkCruzadores(player);
 					break;
 				case 4:
-					maxShipCount = checkEncouracados(player);
+					maxShipClassCount = checkEncouracados(player);
 					break;
 				case 5:
-					maxShipCount = checkPortaAvioes(player);
+					maxShipClassCount = checkPortaAvioes(player);
 					break;
 				default:
 					shipStart = false;
@@ -224,8 +224,8 @@ void setShip(int player) {
  				 	break;
 			}
       Serial.print("isShipValid: ");
-      Serial.println(maxShipCount);
-			if( ! maxShipCount){ // Verifica se o navio não sobrepõe outros navios
+      Serial.println(maxShipClassCount);
+			if( ! maxShipClassCount){ // Verifica se o navio não sobrepõe outros navios
 				//ordenar os pontos
 				if(shipStartRow == shipEndRow){
 					if (shipStartCol >= shipEndCol){
