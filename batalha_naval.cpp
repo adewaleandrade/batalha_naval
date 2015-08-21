@@ -15,12 +15,7 @@ LedControl lc = LedControl(12, 10, 11, 1); // Pins: DIN,CLK,CS, # of Display con
 // buzzer
 #define buzzer 7
 
-//Limite de Navios
-#define MAXHIDROAVIOES 2
-#define MAXSUBMARINES 2
-#define MAXCRUZADORES 1
-#define MAXENCOURACADOS 1
-#define MAXPORTAAVIOES 1
+
 
 //Tipos de Navio
 #define HIDROAVIAO 0
@@ -28,6 +23,8 @@ LedControl lc = LedControl(12, 10, 11, 1); // Pins: DIN,CLK,CS, # of Display con
 #define CRUZADOR 2
 #define ENCOURACADO 3
 #define PORTAAVIAO 4
+
+#define MAXSHIPSIZE 5
 
 unsigned long delaytime = 100;
 
@@ -39,12 +36,23 @@ int shipEndRow = 0;
 int shipStartCol = 0;
 int shipEndCol = 0;
 
-int ships[5][2] ={
+
+int maxShipCounts[6] = { 
+  0, 
+  2, //MAXHIDROAVIOES
+  2, //MAXSUBMARINES
+  1, //MAXCRUZADORES
+  1, //MAXENCOURACADOS
+  1  //MAXPORTAAVIOES
+};
+
+int globalShips[6][2] = {
 	{0,0},
 	{0,0},
 	{0,0},
 	{0,0},
-	{0,0}
+	{0,0},
+  {0,0}
 };
 
 int turnPlayer = 1;
@@ -200,11 +208,21 @@ void setShip(int player) {
 			int size = getShipSize(shipStartRow, shipStartCol, shipEndRow, shipEndCol);
       Serial.print("ShipSize ");
       Serial.println(size);
+      Serial.print("ShipClassCount:  ");
+      Serial.println(globalShips[size][player-1]);
 			bool maxShipClassCount = true;
-			switch (size){ // Verifica se o tipo de navio selecionado comporta um novo navio;
+      
+      if(size <= MAXSHIPSIZE){
+        if(globalShips[size][player-1] < maxShipCounts[size]){
+          maxShipClassCount = false;
+        }
+      }
+        
+			
+      /*switch (size){ // Verifica se o tipo de navio selecionado comporta um novo navio;
 				// Converter esse swtich numa função que recebe o player e o tamnaho da navio e faz as verificações.; @Lucas
 				case 1: // Macro Tamanho do Navio (HIDROAVIOES)
-					maxShipClassCount = checkHidroavioes(player);//
+					maxShipClassCount = checkHidroavioes(player, &globalShips[size][player-1]);//
 					break;
 				case 2: 
 					maxShipClassCount = checkSubmarines(player);
@@ -222,8 +240,9 @@ void setShip(int player) {
 					shipStart = false;
  				 	// emitir sinal com o buzzer;
  				 	break;
-			}
-      Serial.print("isShipValid: ");
+			}*/
+
+      Serial.print("isShipCoutFull: ");
       Serial.println(maxShipClassCount);
 			if( ! maxShipClassCount){ // Verifica se o navio não sobrepõe outros navios
 				//ordenar os pontos
@@ -241,7 +260,7 @@ void setShip(int player) {
 					}
 				}
 
-				if(isShipPosValid(player, shipStartRow, shipStartCol, shipEndRow, shipEndCol)){
+				if(isShipPosValid(player, shipStartRow, shipStartCol, shipEndRow, shipEndCol, maps)){
           Serial.println("isShipPosValid: True");
 					//Salvar no mapa do jogador e atualizar contadores
 					//Salva no mapa
@@ -250,9 +269,12 @@ void setShip(int player) {
 					    maps[player - 1][i][j] = 1;
 					  }
 					}
-
+          Serial.print("Quantidade do Navio: ");
+          Serial.println(globalShips[size][player-1]);
 					//Atualiza tabela de navios
-					ships[size][player-1] = ships[size][player-1] + 1;
+					globalShips[size][player-1] = globalShips[size][player-1] + 1;
+          Serial.print("Quantidade do Navio Apos insert: ");
+          Serial.println(globalShips[size][player-1]);
 					done = true;
 				}else{ // Navio sobrepondo outro navio
           Serial.println("isShipPosValid: False");
@@ -292,7 +314,7 @@ int getShipSize(int shipSR, int shipSC, int shipER, int shipEC ){
 }
 
 //Verifica se a posição de um dado navio é válido, ou seja, um navio não sobrepõe outro.
-bool isShipPosValid(int player, int sX, int sY, int eX, int eY) {
+bool isShipPosValid(int player, int sX, int sY, int eX, int eY, int maps[2][8][8]) {
 	Serial.println("isShipPosValid");
 	if((eX < sX) || (eY < sY)){ //Se o navio não está da esquerda para direita e nem de cima para baixo, retorna falso
 		return false;
@@ -300,7 +322,13 @@ bool isShipPosValid(int player, int sX, int sY, int eX, int eY) {
 
 	for(int i = sX; i <= eX; i++){
 		for (int j = sY; j <= eY; j++){
-			if (maps[player][i][j] == 1){
+      Serial.print("Player: "); Serial.println(player-1);
+      Serial.print("i: "); Serial.println(i);
+      Serial.print("j: "); Serial.println(j);
+      Serial.print("maps[player][i][j]: "); Serial.println(maps[player-1][i][j]);
+  
+			if (maps[player-1][i][j] == 1){
+
 				return false;
 			}
 		}
@@ -312,48 +340,59 @@ bool isShipPosValid(int player, int sX, int sY, int eX, int eY) {
 // Verifica se a quantidade de navios do jogador ja atingiu o limite
 bool checkShipsCount(int player){
 	Serial.println("checkShipsCount");
-	if( checkHidroavioes(player) && checkSubmarines(player) && checkCruzadores(player) &&
-			checkEncouracados(player) && checkPortaAvioes(player)){
-		return true;
-	}
-
-	return false;
-}
-
-bool checkHidroavioes(int player){
-	if(ships[HIDROAVIAO][player-1] < MAXHIDROAVIOES){
-		return false;
-	}
+  for (int i = 0; i <= MAXSHIPSIZE; i++){
+    Serial.print("checkShipsCount - ");
+    Serial.print(i);
+    if(globalShips[i][player-1] < maxShipCounts[i]){
+      Serial.println(": False");
+      return false;
+    }
+  }
+  Serial.println(": True;");
 	return true;
 }
 
-bool checkSubmarines(int player){
-	if(ships[SUBMARINO][player-1] < MAXSUBMARINES){
-		return false;
-	}
-	return true;
-}
+// bool checkHidroavioes(int player, int* shipCount){
+//   Serial.print("hidroavioes: ");
+//   Serial.println(shipCount);
+//   Serial.print("maxHidroavioes: ");
+//   Serial.println(MAXHIDROAVIOES);
+//   Serial.print("checkHidroavioes: ");
+// 	if(shipCount < MAXHIDROAVIOES){
+//     Serial.println("False");
+// 		return false;
+// 	}
+//   Serial.println("True");
+// 	return true;
+// }
 
-bool checkCruzadores(int player){
-	if(ships[CRUZADOR][player-1] < MAXCRUZADORES){
-		return false;
-	}
-	return true;
-}
+// bool checkSubmarines(int player){
+// 	if(globalShips[SUBMARINO][player-1] < MAXSUBMARINES){
+// 		return false;
+// 	}
+// 	return true;
+// }
 
-bool checkEncouracados(int player){
-	if(ships[ENCOURACADO][player-1] < MAXENCOURACADOS){
-		return false;
-	}
-	return true;
-}
+// bool checkCruzadores(int player){
+// 	if(globalShips[CRUZADOR][player-1] < MAXCRUZADORES){
+// 		return false;
+// 	}
+// 	return true;
+// }
 
-bool checkPortaAvioes(int player){
-	if(ships[PORTAAVIAO][player-1] < MAXPORTAAVIOES){
-		return false;
-	}
-	return true;
-}
+// bool checkEncouracados(int player){
+// 	if(globalShips[ENCOURACADO][player-1] < MAXENCOURACADOS){
+// 		return false;
+// 	}
+// 	return true;
+// }
+
+// bool checkPortaAvioes(int player){
+// 	if(globalShips[PORTAAVIAO][player-1] < MAXPORTAAVIOES){
+// 		return false;
+// 	}
+// 	return true;
+// }
 
 //print on the matrix the player's map
 void showPlayerMap(int player) {
