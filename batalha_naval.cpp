@@ -178,18 +178,19 @@ void setShip(int player) {
   bool shipStart = false;
   bool shipEnd = false;
 
+  updateDisplay(player, 0, true);
   while (! done) {
-    // updateDisplay(player, 0, true);
+    blinkSelectedPoints(player - 1, shipStart);
     moveCursor(player, 0);
     Serial.print("confirm btn: ");
   	Serial.println(digitalRead(btnC));
     if (digitalRead(btnC) == HIGH) {
-    	digitalWrite(btnC, LOW);
-    	delay(1000);
+    	digitalWrite(btnC, LOW); delay(500); //delay para evitar que o botão seja lido mais de uma vez;
+    	
     	if( ! shipStart){ // Configurar ponto de inicio do Navio
     		shipStartRow = cursorRow;
-			shipStartCol = cursorCol;
-			shipStart = true;
+  			shipStartCol = cursorCol;
+  			shipStart = true;
     	}else if(! shipEnd){// Configurar ponto de fim do Navio
     		shipEndRow = cursorRow;
 			shipEndCol = cursorCol;
@@ -257,6 +258,16 @@ void setShip(int player) {
 			}
     	}
     }
+  }
+}
+
+// Faz o ponto inicial do navio piscar;
+void blinkSelectedPoints(int matrix, bool show){
+  if(show){
+    lc.setLed(matrix, shipStartRow, shipStartCol, 1);
+    delay(100);
+    lc.setLed(matrix, shipStartRow, shipStartCol, 0);
+    delay(100);
   }
 }
 
@@ -351,14 +362,11 @@ void showPlayerTurn(int player) {
 	Serial.println("showPlayerTurn");
   // Mostra na matriz o jogador
   lightPlayerTurn(player);
-  delay(2000);
-  Serial.print("confirm btn: ");
-  Serial.println(digitalRead(btnC));
   bool confirmed = false;
   while ( ! confirmed) { // Aguarda a confirmação do Jogador
     if (digitalRead(btnC) == HIGH) {
       confirmed = true;
-      digitalWrite(btnC, LOW);
+      digitalWrite(btnC, LOW); delay(2000); //delay para evitar que o botão seja lido mais de uma vez;
     }
   }
 }
@@ -397,22 +405,15 @@ void clearScreen() {
 // Espera um comando do jogador e atualiza a posição do cursor
 void moveCursor(int player, int matrix) {
 	Serial.println("showPlayerTurn");
-//  bool update = false;
-//  while (! update) {
-	  Serial.print("Vertical btn: ");
-	  Serial.println(digitalRead(btnV));
-	  Serial.print("Horizontal btn: ");
-	  Serial.println(digitalRead(btnH));
-    if (digitalRead(btnV) == HIGH) {
-      cursorRow = (cursorRow < 7) ? cursorRow+1 : 0;
-      updateDisplay(player, matrix, true);
-    }
+  if (digitalRead(btnV) == HIGH) {
+    cursorRow = (cursorRow < 7) ? cursorRow+1 : 0;
+    updateDisplay(player, matrix, true);
+  }
 
-    if (digitalRead(btnH) == HIGH) {
-      cursorCol = (cursorCol < 7) ? cursorCol+1 : 0;
-      updateDisplay(player, matrix, true);
+  if (digitalRead(btnH) == HIGH) {
+    cursorCol = (cursorCol < 7) ? cursorCol+1 : 0;
+    updateDisplay(player, matrix, true);
     }
-//  }
 }
 
 //Mostra na matriz o cursor do jogador
