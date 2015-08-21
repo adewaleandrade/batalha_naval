@@ -182,19 +182,24 @@ void setShip(int player) {
   while (! done) {
     blinkSelectedPoints(player - 1, shipStart);
     moveCursor(player, 0);
-    Serial.print("confirm btn: ");
-  	Serial.println(digitalRead(btnC));
+    
     if (digitalRead(btnC) == HIGH) {
-    	digitalWrite(btnC, LOW); delay(500); //delay para evitar que o botão seja lido mais de uma vez;
-    	
+    	Serial.print("confirm btn: ");
+      Serial.println(digitalRead(btnC));
+      digitalWrite(btnC, LOW); delay(500); //delay para evitar que o botão seja lido mais de uma vez;
+      
     	if( ! shipStart){ // Configurar ponto de inicio do Navio
     		shipStartRow = cursorRow;
   			shipStartCol = cursorCol;
   			shipStart = true;
+        Serial.println("Start Point Set");
     	}else if(! shipEnd){// Configurar ponto de fim do Navio
     		shipEndRow = cursorRow;
 			shipEndCol = cursorCol;
+      Serial.println("END Point Set");
 			int size = getShipSize(shipStartRow, shipStartCol, shipEndRow, shipEndCol);
+      Serial.print("ShipSize ");
+      Serial.println(size);
 			bool validShip = false;
 			switch (size){ // Verifica se o tipo de navio selecionado comporta um novo navio;
 				// Converter esse swtich numa função que recebe o player e o tamnaho da navio e faz as verificações.; @Lucas
@@ -218,7 +223,8 @@ void setShip(int player) {
  				 	// emitir sinal com o buzzer;
  				 	break;
 			}
-
+      Serial.print("isShipValid: ");
+      Serial.println(validShip);
 			if(validShip){ // Verifica se o navio não sobrepõe outros navios
 				//ordenar os pontos
 				if(shipStartRow == shipEndRow){
@@ -236,6 +242,7 @@ void setShip(int player) {
 				}
 
 				if(isShipPosValid(player, shipStartRow, shipStartCol, shipEndRow, shipEndCol)){
+          Serial.println("isShipPosValid: True");
 					//Salvar no mapa do jogador e atualizar contadores
 					//Salva no mapa
 					for (int i = shipStartRow; i <= shipEndRow; i++) {
@@ -248,6 +255,7 @@ void setShip(int player) {
 					ships[size][player-1] = ships[size][player-1] + 1;
 					done = true;
 				}else{ // Navio sobrepondo outro navio
+          Serial.println("isShipPosValid: False");
 					shipStart = false;
 					//emitir sinal para usuário buzzer
 				}
@@ -366,7 +374,7 @@ void showPlayerTurn(int player) {
   while ( ! confirmed) { // Aguarda a confirmação do Jogador
     if (digitalRead(btnC) == HIGH) {
       confirmed = true;
-      digitalWrite(btnC, LOW); delay(2000); //delay para evitar que o botão seja lido mais de uma vez;
+      digitalWrite(btnC, LOW); delay(500); //delay para evitar que o botão seja lido mais de uma vez;
     }
   }
 }
@@ -404,7 +412,7 @@ void clearScreen() {
 
 // Espera um comando do jogador e atualiza a posição do cursor
 void moveCursor(int player, int matrix) {
-	Serial.println("showPlayerTurn");
+	// Serial.println("moveCursor");
   if (digitalRead(btnV) == HIGH) {
     cursorRow = (cursorRow < 7) ? cursorRow+1 : 0;
     updateDisplay(player, matrix, true);
