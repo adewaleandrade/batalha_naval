@@ -288,7 +288,7 @@ int getShipSize(int shipSR, int shipSC, int shipER, int shipEC ){
 		size = shipSR - shipER;
 	}
 
-	return (size < 0) ? size * (-1) : size + 1;
+	return (size < 0) ? (size * (-1)) + 1 : size + 1;
 }
 
 //Verifica se a posição de um dado navio é válido, ou seja, um navio não sobrepõe outro.
