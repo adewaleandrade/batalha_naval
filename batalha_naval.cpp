@@ -134,28 +134,26 @@ void setup() {
   pinMode(buzzer, OUTPUT);
 
 	// lc.setRow(0, i, pText[i]);
-   printRow(0,cursorRow,8,fr);
-   printColumn(0,cursorCol,8,fr);
+   // printRow(0,cursorRow,8,fr);
+   // printColumn(0,cursorCol,8,fr);
 }
 
 
 void loop() {
 
-Serial.print("confirm btn: ");
+  Serial.print("confirm btn: ");
   Serial.println(digitalRead(btnC));
   while (! isMapSet) {
-  	// showCursor(0);
     setPlayerMap();
   }
 
   showPlayerTurn(turnPlayer);
 
-  
-  for (int i = 0; i < MAXPLAYERS; i++){
-    if( i != turnPlayer){
-      updateDisplay(turnPlayer-1,false);
-    }
-  }
+  // for (int i = 0; i < MAXPLAYERS; i++){
+  //   if( i != turnPlayer){
+  //     updateDisplay(turnPlayer-1,false);
+  //   }
+  // }
   /*playerTurn();
   changePlayerTurn();
 
@@ -227,30 +225,6 @@ void setShip(int player) {
           maxShipClassCount = false;
         }
       }
-        
-			
-      /*switch (size){ // Verifica se o tipo de navio selecionado comporta um novo navio;
-				// Converter esse swtich numa função que recebe o player e o tamnaho da navio e faz as verificações.; @Lucas
-				case 1: // Macro Tamanho do Navio (HIDROAVIOES)
-					maxShipClassCount = checkHidroavioes(player, &globalShips[size][player-1]);//
-					break;
-				case 2: 
-					maxShipClassCount = checkSubmarines(player);
-					break;
-				case 3:
-					maxShipClassCount = checkCruzadores(player);
-					break;
-				case 4:
-					maxShipClassCount = checkEncouracados(player);
-					break;
-				case 5:
-					maxShipClassCount = checkPortaAvioes(player);
-					break;
-				default:
-					shipStart = false;
- 				 	// emitir sinal com o buzzer;
- 				 	break;
-			}*/
 
       Serial.print("isShipCoutFull: ");
       Serial.println(maxShipClassCount);
@@ -367,7 +341,7 @@ void showPlayerMap(int player) {
   clearScreen(player-1);
   for (int i = 0; i < 8; i++) {
     for (int j = 0; j < 8; j++) {
-      lc.setLed(0, i, j, maps[player - 1][i][j]);
+      lc.setLed(player-1, i, j, maps[player - 1][i][j]);
     }
   }
 }
@@ -393,17 +367,20 @@ void lightPlayerTurn(int turn) {
     pText = dispP2;
   }
 
-  clearScreen(turn-1);
+  for (int i = 0; i < turn; ++i){
+    clearScreen(i);
 
-  for (int i = 0 ; i < 8; i++) {
-    lc.setRow(0, i, pText[i]);
+    for (int j = 0 ; j < 8; j++) {
+      lc.setRow(i, j, pText[j]);
+    }
   }
+    
 }
 
 
 void updateDisplay(int player, bool cursor) {
   clearScreen(player-1);
-  showPlayerMap(player-1);
+  showPlayerMap(player);
   if (cursor) {
     showCursor(player-1);
   }
