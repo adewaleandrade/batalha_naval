@@ -628,13 +628,13 @@ bool hasNeighboors(int targetPlayer, int row, int col){
 
   //busca vertical
   for (int i = 1; i <= shipClass; ++i){
-    if( ((row+i) < 8) && (row - i) => 0 ){
+    if( ((row+i) < 8) && ((row - i) >= 0) ){
       if( (maps[targetPlayer-1][row +i][col] == shipClass) || (maps[targetPlayer-1][row - i][col] == shipClass) ){
         return true;
       }
     }
 
-    if( ((col+i) < 8) && (col - i) => 0 ){
+    if( ((col+i) < 8) && ((col - i) >= 0) ){
       if( (maps[targetPlayer-1][row][col + i] == shipClass) || (maps[targetPlayer-1][row][col - i] == shipClass) ){
         return true;
       }
