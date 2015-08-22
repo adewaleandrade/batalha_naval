@@ -302,7 +302,6 @@ void setup() {
    // printColumn(0,cursorCol,8,fr);
 }
 
-
 void loop() {
 
   Serial.print("confirm btn: ");
@@ -331,8 +330,7 @@ void loop() {
     showGameOverScreen();
     showGameOverScreen();
     showGameOverScreen();
-    /*showGameOverScreen(winner);
-    resetGame();*/
+    resetGame();
   }
 }
 
@@ -365,16 +363,39 @@ bool isPlayerMapEmpty(int player){
 void showGameOverScreen(){
   for (int i = 0; i < MAXPLAYERS; ++i){
     lc.clearDisplay(i);
-    delay(500);
+    delay(250);
 
     for (int j = 0 ; j < 8; j++) {
       lc.setRow(i, j, gameOver[j]);
     }
     digitalWrite(buzzer,HIGH);
-    delay(1000);
+    delay(500);
     digitalWrite(buzzer,LOW);
   }
 }
+
+void resetGame(){
+  // reset Maps
+  for(int p=0; p<MAXPLAYERS; p++){
+    for (int i = 0; i < 8; ++i){
+      for (int j = 0; j < 8; ++j){
+        playerAttacks[p][i][j] = 0;
+        maps[p][i][j] = 0;
+      }
+    }
+  }
+
+  // reset GlobalShips
+  for(int i=0;i<6;i++){
+    for(int j = 0; j < 2; ++j){
+      globalShips[i][j] = 0;
+    }
+  }
+  
+  turnPlayer = 1;
+  isMapSet = false;
+}
+
 
 void playerTurn(int player){
   Serial.print("player turn: P");Serial.println(player);
@@ -561,9 +582,9 @@ bool isHitSuccessfull(int attacker, int row, int col){
 void showAcertou(int attacker){
   Serial.println("showAcertou");
   for(int t=0;t<3;t++){ // blink the message 3 times
-    lc.clearDisplay(t);
-    delay(500);
     for(int p = 0; p < MAXPLAYERS; p++ ){
+      lc.clearDisplay(p);
+      delay(250);
       for(int i = 0; i<8; i++){
         for(int j =0; j<8;j++){
           lc.setLed(p, i, j, hit[i][j]);
