@@ -367,7 +367,7 @@ void lightPlayerTurn(int turn) {
     pText = dispP2;
   }
 
-  for (int i = 0; i < turn; ++i){
+  for (int i = 0; i < MAXPLAYERS; ++i){
     clearScreen(i);
 
     for (int j = 0 ; j < 8; j++) {
