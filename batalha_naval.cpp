@@ -413,6 +413,11 @@ void playerTurn(int player) {
       playerAttacks[player - 1][cursorRow][cursorCol] = 1;
 
       if (isHitSuccessfull(player - 1, cursorRow, cursorCol)) {
+        if( ! hasNeighboors(player-1,cursorRow, cursorCol) ){
+          int target = getTarget(player-1);
+          showAfundouNavio(maps[target][cursorRow][cursorCol]);
+        }
+
         showAcertou(player - 1);
       } else {
         showErrou(player - 1);
@@ -564,6 +569,9 @@ void setShip(int player) {
   }
 }
 
+/*
+ * funções de alerta uzando o buzzer
+ */
 void buzzerConfirm(){
    digitalWrite(buzzer, HIGH);
    delay(500);
@@ -583,15 +591,13 @@ void buzzerAlert(){
    delay(250);
    digitalWrite(buzzer,LOW);
 }
+//end buzzer Alerts
 
 // Verifica se um ataque foi bem sucedido. Em caso positivo, atualiza o mapa do alvo removendo o ponto atacado.
 bool isHitSuccessfull(int attacker, int row, int col) {
   Serial.println("isHitSuccessfull");
 
-  int target = 0;
-  if (attacker < MAXPLAYERS - 1) {
-    target = attacker + 1;
-  }
+  int target = getTarget(attacker);
 
   Serial.print("targetPlayer: P");
   Serial.println(target + 1);
@@ -602,6 +608,51 @@ bool isHitSuccessfull(int attacker, int row, int col) {
   }
 
   return false;
+}
+
+
+int getTarget(int attacker){
+  Serial.println("getTarget");
+  int target = 0;
+  if (attacker < MAXPLAYERS - 1) {
+    target = attacker + 1;
+  }
+
+  return target;
+}
+//Verifica se o navio do tipo atacado ja foi totalmente destruido
+bool hasNeighboors(int targetPlayer, int row, int col){
+  Serial.println("hasNeighboors");
+  int shipClass = maps[targetPlayer-1][row][col];
+  if( ! shipClass){ return false;} // se o ponto estiver vazio, retorna false
+
+  //busca vertical
+  for (int i = 1; i <= shipClass; ++i){
+    if( ((row+i) < 8) && (row - i) => 0 ){
+      if( (maps[targetPlayer-1][row +i][col] == shipClass) || (maps[targetPlayer-1][row - i][col] == shipClass) ){
+        return true;
+      }
+    }
+
+    if( ((col+i) < 8) && (col - i) => 0 ){
+      if( (maps[targetPlayer-1][row][col + i] == shipClass) || (maps[targetPlayer-1][row][col - i] == shipClass) ){
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+
+/*
+ * Essa função recebe como parametro o tamanho do navio; 
+ * Pelo tamanho sabemos a classe e assim podemos dizer qual o tipo do navio q foi derrubado
+ */
+void showAfundouNavio(int shipClass){
+  Serial.println("showAfundouNavio");
+
+
 }
 
 void showAcertou(int attacker) {
@@ -635,9 +686,8 @@ void showErrou(int attacker) {
     }
     digitalWrite(buzzer, HIGH);
     delay(250);
-    digitalWrite(buzzer, LOW);
-    delay(500);
   }
+  digitalWrite(buzzer, LOW);
 }
 
 // Faz o ponto inicial do navio piscar;
@@ -747,7 +797,8 @@ void showPlayerMap(int player, bool playerMap) {
   for (int i = 0; i < 8; i++) {
     for (int j = 0; j < 8; j++) {
       if (playerMap) {
-        lc.setLed(player - 1, i, j, maps[player - 1][i][j]);
+        int led = (maps[player - 1][i][j] != 0) ? 1 : 0;
+        lc.setLed(player - 1, i, j, led);
       } else {
         lc.setLed(player - 1, i, j, playerAttacks[player - 1][i][j]);
       }
