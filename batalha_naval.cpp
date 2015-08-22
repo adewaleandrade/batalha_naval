@@ -84,6 +84,29 @@ int maps[2][8][8] = {
   }
 };
 
+int playerAttacks[2][8][8] = {
+  {
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0}
+  },
+  {
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0}
+  }
+};
+
 byte dispP1[] = { // Escreve P1
   B00000000,
   B00000000,
@@ -149,25 +172,57 @@ void loop() {
 
   showPlayerTurn(turnPlayer);
 
-  // for (int i = 0; i < MAXPLAYERS; i++){
-  //   if( i != turnPlayer){
-  //     updateDisplay(turnPlayer-1,false);
-  //   }
-  // }
-  /*playerTurn();
-  changePlayerTurn();
+  for (int i = 0; i < MAXPLAYERS; i++){
+    updateDisplay(i, true, false);
+  }
 
+  playerTurn(turnPlayer);
+  changePlayerTurn();
+  /*
   if ( isGameOver ) {
     showGameOverScreen();
   }*/
 
-  //  Serial.print("Button State: ");
-  //  Serial.println(buttonState);
-
 }
 
 void playerTurn(int player){
+  Serial.print("player turn: P");Serial.println(player);
+  bool done = false;
 
+  updateDisplay(player, false, true);
+  while(! done){
+    moveCursor(player, false);
+    if (digitalRead(btnC) == HIGH) {
+      Serial.print("confirm btn: ");
+      Serial.println(digitalRead(btnC));
+      digitalWrite(btnC, LOW); delay(500); //delay para evitar que o botão seja lido mais de uma vez;
+      
+      // Salva o ataque
+      playerAttacks[player - 1][cursorRow][cursorCol] = 1;
+      
+      if(isHitSuccessfull(player-1, cursorRow, cursorCol)){
+        showAcertou(player-1);
+      }else{
+        showErrou(player-1);
+      }
+      done=true;
+    }
+  }
+}
+
+// Passa a vez para o próximo jogador
+void changePlayerTurn(){
+  if(turnPlayer == MAXPLAYERS){
+    turnPlayer = 1;
+  }else{
+    turnPlayer++;
+  }
+  resetCursors();
+}
+
+void resetCursors(){
+  cursorCol = 0;
+  cursorRow = 0;
 }
 
 // Função que Administra a etapa de configuração dos mapas dos jogadores
@@ -184,7 +239,7 @@ void setPlayerMap() {
     setShip(turnPlayer);
   }
 
-  turnPlayer++;// Passa para a configuração do próximo jogador;
+  changePlayerTurn(); // Passa para a configuração do próximo jogador;
 }
 
 // Define a posição dos navios
@@ -194,10 +249,10 @@ void setShip(int player) {
   bool shipStart = false;
   bool shipEnd = false;
 
-  updateDisplay(player, true);
+  updateDisplay(player, true, true);
   while (! done) {
     blinkSelectedPoints(player - 1, shipStart);
-    moveCursor(player);
+    moveCursor(player, true);
     
     if (digitalRead(btnC) == HIGH) {
     	Serial.print("confirm btn: ");
@@ -275,6 +330,29 @@ void setShip(int player) {
   }
 }
 
+// Verifica se um ataque foi bem sucedido. Em caso positivo, atualiza o mapa do alvo removendo o ponto atacado.
+bool isHitSuccessfull(int attacker, int row, int col){
+  int target = 0;
+  if(attacker <= MAXPLAYERS -1){
+    target = attacker + 1;
+  }
+
+  if(maps[target][row][col] == 1){
+    maps[target][row][col] = 0;
+    return true;
+  }
+
+  return false;
+}
+
+void showAcertou(int attacker){
+
+}
+
+void showErrou(int attacker){
+
+}
+
 // Faz o ponto inicial do navio piscar;
 void blinkSelectedPoints(int matrix, bool show){
   if(show){
@@ -337,11 +415,15 @@ bool checkShipsCount(int player){
 }
 
 //print on the matrix the player's map
-void showPlayerMap(int player) {
-  clearScreen(player-1);
+void showPlayerMap(int player, bool playerMap) {
+  lc.clearDisplay(player-1);
   for (int i = 0; i < 8; i++) {
     for (int j = 0; j < 8; j++) {
-      lc.setLed(player-1, i, j, maps[player - 1][i][j]);
+      if(playerMap){
+        lc.setLed(player-1, i, j, maps[player - 1][i][j]);  
+      }else{
+        lc.setLed(player-1, i, j, playerAttacks[player - 1][i][j]);
+      }
     }
   }
 }
@@ -368,7 +450,7 @@ void lightPlayerTurn(int turn) {
   }
 
   for (int i = 0; i < MAXPLAYERS; ++i){
-    clearScreen(i);
+    lc.clearDisplay(i);
 
     for (int j = 0 ; j < 8; j++) {
       lc.setRow(i, j, pText[j]);
@@ -378,33 +460,26 @@ void lightPlayerTurn(int turn) {
 }
 
 
-void updateDisplay(int player, bool cursor) {
-  clearScreen(player-1);
-  showPlayerMap(player);
+void updateDisplay(int player, bool playerMap, bool cursor) {
+  lc.clearDisplay(player-1);
+  showPlayerMap(player, playerMap);  
+  
   if (cursor) {
     showCursor(player-1);
   }
 }
 
-// Limpa a matriz de leds
-void clearScreen(int matrix) {
-  for (int i = 0 ; i < 8; i++) {
-    lc.setRow(matrix, i, B00000000);
-  }
-  // delay(500);
-}
-
 // Espera um comando do jogador e atualiza a posição do cursor
-void moveCursor(int player) {
+void moveCursor(int player, bool playerMap) {
 	// Serial.println("moveCursor");
   if (digitalRead(btnV) == HIGH) {
     cursorRow = (cursorRow < 7) ? cursorRow+1 : 0;
-    updateDisplay(player, true);
+    updateDisplay(player, playerMap, true);
   }
 
   if (digitalRead(btnH) == HIGH) {
     cursorCol = (cursorCol < 7) ? cursorCol+1 : 0;
-    updateDisplay(player, true);
+    updateDisplay(player, playerMap, true);
     }
 }
 
