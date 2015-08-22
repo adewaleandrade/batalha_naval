@@ -14,8 +14,6 @@
 // buzzer
 #define buzzer 7
 
-
-
 //Tipos de Navio
 #define HIDROAVIAO 0
 #define SUBMARINO 1
@@ -26,6 +24,10 @@
 #define MAXSHIPSIZE 5
 
 LedControl lc = LedControl(12, 10, 11, MAXPLAYERS ); // Pins: DIN,CLK,CS, # of Display connected
+
+int DataPin = 12;  //Ligar o pino 4 do Arduino ao DIN do modulo  
+int ClockPin = 10; //Ligar o pino 5 do Arduino ao CLK do módulo  
+int LoadPin = 11;  //Ligar o pino 6 do Arduinio ao pino CS/Load do módulo 
 
 unsigned long delaytime = 100;
 
@@ -47,23 +49,77 @@ int maxShipCounts[6] = {
   1  //MAXPORTAAVIOES
 };
 
-int globalShips[6][2] = {
-	{0,0},
-	{0,0},
-	{0,0},
-	{0,0},
-	{0,0},
-  {0,0}
+// int globalShips[6][2] = {
+// 	{0,0},
+// 	{0,0},
+// 	{0,0},
+// 	{0,0},
+// 	{0,0},
+//   {0,0}
+// };
+
+int globalShips[6][2] = { // Versão preenchida para testes
+  {0,0},
+  {2,2},
+  {2,2},
+  {1,1},
+  {1,1},
+  {1,1}
 };
 
 int turnPlayer = 1;
 
 bool isMapSet = false;
-bool isGameOver = false;
+
+// int maps[2][8][8] = {
+//   {
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0}
+//   },
+//   {
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0}
+//   }
+// };
+
+// int maps[2][8][8] = { // Mapa para testes de rodadas
+//   {
+//     {1, 0, 0, 1, 1, 1, 1, 1},
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 1, 0, 1, 1, 1, 1, 0},
+//     {0, 0, 1, 1, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 1, 1, 0, 0},
+//     {0, 0, 0, 1, 1, 1, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0}
+//   },
+//   {
+//     {0, 0, 1, 0, 0, 0, 0, 0},
+//     {0, 1, 0, 0, 0, 0, 0, 0},
+//     {1, 0, 0, 0, 0, 0, 0, 1},
+//     {1, 0, 0, 1, 1, 0, 0, 1},
+//     {1, 0, 0, 0, 0, 0, 0, 1},
+//     {1, 0, 1, 0, 0, 0, 0, 1},
+//     {1, 0, 1, 0, 0, 0, 0, 0},
+//     {0, 0, 1, 0, 0, 0, 0, 0}
+//   }
+// };
 
 int maps[2][8][8] = {
   {
-    {0, 0, 0, 0, 0, 0, 0, 0},
+    {1, 0, 1, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 0, 0, 0},
@@ -73,8 +129,8 @@ int maps[2][8][8] = {
     {0, 0, 0, 0, 0, 0, 0, 0}
   },
   {
-    {0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0},
+    {1, 0, 0, 0, 0, 0, 0, 0},
+    {0, 1, 0, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 0, 0, 0},
@@ -129,6 +185,91 @@ byte dispP2[] = {// Escreve P2
   B00000000
 };
 
+byte gameOver[] = {// Escreve P2
+  B00000000,
+  B00000000,
+  B00000000,
+  B00011000,
+  B00011000,
+  B00000000,
+  B00000000,
+  B00000000
+};
+
+int hit[8][8] = {
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 1, 1, 0, 0, 0},
+  {0, 0, 1, 1, 1, 1, 0, 0},
+  {0, 1, 1, 0, 0, 1, 1, 0},
+  {0, 1, 1, 0, 0, 1, 1, 0},
+  {0, 0, 1, 1, 1, 1, 0, 0},
+  {0, 0, 0, 1, 1, 0, 0, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0}
+};
+
+int miss[8][8] = {
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 1, 0, 0, 0, 0, 1, 0},
+  {0, 0, 1, 0, 0, 1, 0, 0},
+  {0, 0, 0, 1, 1, 0, 0, 0},
+  {0, 0, 0, 1, 1, 0, 0, 0},
+  {0, 0, 1, 0, 0, 1, 0, 0},
+  {0, 1, 0, 0, 0, 0, 1, 0},
+  {0, 0, 0, 0, 0, 0, 0, 0}
+};
+
+// int letterH[8][8] = {
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 1, 1, 0, 0, 1, 1, 0},
+//     {0, 1, 1, 0, 0, 1, 1, 0},
+//     {0, 1, 1, 1, 1, 1, 1, 0},
+//     {0, 1, 1, 1, 1, 1, 1, 0},
+//     {0, 1, 1, 0, 0, 1, 1, 0},
+//     {0, 1, 1, 0, 0, 1, 1, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0}
+//   };
+
+// int letterI[8][8] = {
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 1, 1, 0, 0, 0},
+//     {0, 0, 0, 1, 1, 0, 0, 0},
+//     {0, 0, 0, 1, 1, 0, 0, 0},
+//     {0, 0, 0, 1, 1, 0, 0, 0},
+//     {0, 0, 0, 1, 1, 0, 0, 0},
+//     {0, 0, 0, 1, 1, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0}
+//   };
+// int letterT[8][8] = {
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 1, 1, 1, 1, 1, 1, 0},
+//     {0, 1, 1, 1, 1, 1, 1, 0},
+//     {0, 0, 0, 1, 1, 0, 0, 0},
+//     {0, 0, 0, 1, 1, 0, 0, 0},
+//     {0, 0, 0, 1, 1, 0, 0, 0},
+//     {0, 0, 0, 1, 1, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0}
+//   };
+// int letterM[8][8] = {
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 1, 0, 0, 0, 0, 1, 0},
+//     {0, 1, 1, 1, 1, 1, 1, 0},
+//     {0, 1, 1, 1, 1, 1, 1, 0},
+//     {0, 1, 1, 0, 0, 1, 1, 0},
+//     {0, 1, 1, 0, 0, 1, 1, 0},
+//     {0, 1, 1, 0, 0, 1, 1, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0}
+//   };
+// int letterS[8][8] = {
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 1, 1, 1, 1, 1, 0},
+//     {0, 1, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 1, 1, 1, 1, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 1, 0},
+//     {0, 0, 1, 1, 1, 1,0 , 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0}
+//   };
+
 //Linha completa (para a pintura)
 int fr[8] = {1, 1, 1, 1, 1, 1, 1, 1};
 
@@ -172,17 +313,67 @@ void loop() {
 
   showPlayerTurn(turnPlayer);
 
-  for (int i = 0; i < MAXPLAYERS; i++){
+  for (int i = 1; i <= MAXPLAYERS; i++){
     updateDisplay(i, true, false);
   }
 
   playerTurn(turnPlayer);
+  updateMaps();
   changePlayerTurn();
-  /*
-  if ( isGameOver ) {
-    showGameOverScreen();
-  }*/
+  
+  int winner = isGameOver();
 
+  if(winner){
+    Serial.println("The Game is Over!");
+    Serial.print("The Winner is: P");
+    Serial.println(winner);
+    // pisca 3 vezes
+    showGameOverScreen();
+    showGameOverScreen();
+    showGameOverScreen();
+    /*showGameOverScreen(winner);
+    resetGame();*/
+  }
+}
+
+// Verifica se o jogo terminou. Caso tenha terminado, retorna o jogador vencedor. Caso negativo, retorna 0;
+int isGameOver(){
+  Serial.println("isGameOver");
+  
+  if(isPlayerMapEmpty(0)) return 2;
+  if(isPlayerMapEmpty(1)) return 1;
+
+  return 0;
+}
+
+// Verifica se todos os navios de um jogador ja foram afundados
+bool isPlayerMapEmpty(int player){
+  Serial.println("isPlayerMapEmpty");
+
+  for (int i = 0; i < 8; ++i){
+    for (int j = 0; j < 8; ++j){
+      Serial.print("player Map: P");Serial.println(player+1);
+      Serial.print("maps[k][");Serial.print(i);Serial.print("][");Serial.print(j);Serial.print("] = ");Serial.println(maps[player][i][j]);
+      if(maps[player][i][j] != 0){
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+void showGameOverScreen(){
+  for (int i = 0; i < MAXPLAYERS; ++i){
+    lc.clearDisplay(i);
+    delay(500);
+
+    for (int j = 0 ; j < 8; j++) {
+      lc.setRow(i, j, gameOver[j]);
+    }
+    digitalWrite(buzzer,HIGH);
+    delay(1000);
+    digitalWrite(buzzer,LOW);
+  }
 }
 
 void playerTurn(int player){
@@ -212,6 +403,7 @@ void playerTurn(int player){
 
 // Passa a vez para o próximo jogador
 void changePlayerTurn(){
+  Serial.println("changePlayerTurn");
   if(turnPlayer == MAXPLAYERS){
     turnPlayer = 1;
   }else{
@@ -220,7 +412,24 @@ void changePlayerTurn(){
   resetCursors();
 }
 
+void updateMaps(){
+  Serial.println("updateMaps");
+  for(int p=0; p<MAXPLAYERS; p++){
+    for (int i = 0; i < 8; ++i){
+      for (int j = 0; j < 8; ++j){
+        int target = 1;
+        if(p == MAXPLAYERS-1){ target =  0;}
+
+        if(playerAttacks[p][i][j] == 1){
+          maps[target][i][j] = 0;
+        }
+      }
+    }
+  }
+}
+
 void resetCursors(){
+  Serial.println("resetCursors");
   cursorCol = 0;
   cursorRow = 0;
 }
@@ -238,8 +447,7 @@ void setPlayerMap() {
   while ( ! checkShipsCount(turnPlayer) ) {
     setShip(turnPlayer);
   }
-
-  changePlayerTurn(); // Passa para a configuração do próximo jogador;
+  turnPlayer++;
 }
 
 // Define a posição dos navios
@@ -332,13 +540,18 @@ void setShip(int player) {
 
 // Verifica se um ataque foi bem sucedido. Em caso positivo, atualiza o mapa do alvo removendo o ponto atacado.
 bool isHitSuccessfull(int attacker, int row, int col){
+  Serial.println("isHitSuccessfull");
+
   int target = 0;
-  if(attacker <= MAXPLAYERS -1){
+  if(attacker < MAXPLAYERS - 1){
     target = attacker + 1;
   }
 
-  if(maps[target][row][col] == 1){
-    maps[target][row][col] = 0;
+  Serial.print("targetPlayer: P");
+  Serial.println(target+1);
+  Serial.print("targetPoint: ");
+  Serial.println(maps[target][row][col]);
+  if(maps[target][row][col] != 0){
     return true;
   }
 
@@ -346,11 +559,39 @@ bool isHitSuccessfull(int attacker, int row, int col){
 }
 
 void showAcertou(int attacker){
-
+  Serial.println("showAcertou");
+  for(int t=0;t<3;t++){ // blink the message 3 times
+    lc.clearDisplay(t);
+    delay(500);
+    for(int p = 0; p < MAXPLAYERS; p++ ){
+      for(int i = 0; i<8; i++){
+        for(int j =0; j<8;j++){
+          lc.setLed(p, i, j, hit[i][j]);
+        }
+      }
+    }
+    digitalWrite(buzzer,HIGH);
+    delay(250);
+    digitalWrite(buzzer,LOW);
+    delay(500);
+  }
 }
 
 void showErrou(int attacker){
-
+  Serial.println("showErrou");
+  for(int t=0;t<3;t++){ // blink the message 3 times
+    for(int p = 0; p < MAXPLAYERS; p++ ){
+      for(int i = 0; i<8; i++){
+        for(int j =0; j<8;j++){
+          lc.setLed(p, i, j, miss[i][j]);
+        }
+      }
+    }
+    digitalWrite(buzzer,HIGH);
+    delay(250);
+    digitalWrite(buzzer,LOW);
+    delay(500);
+  }
 }
 
 // Faz o ponto inicial do navio piscar;
@@ -414,20 +655,6 @@ bool checkShipsCount(int player){
 	return true;
 }
 
-//print on the matrix the player's map
-void showPlayerMap(int player, bool playerMap) {
-  lc.clearDisplay(player-1);
-  for (int i = 0; i < 8; i++) {
-    for (int j = 0; j < 8; j++) {
-      if(playerMap){
-        lc.setLed(player-1, i, j, maps[player - 1][i][j]);  
-      }else{
-        lc.setLed(player-1, i, j, playerAttacks[player - 1][i][j]);
-      }
-    }
-  }
-}
-
 //Mostra qual o jogador atual
 void showPlayerTurn(int player) {
 	Serial.println("showPlayerTurn");
@@ -466,6 +693,20 @@ void updateDisplay(int player, bool playerMap, bool cursor) {
   
   if (cursor) {
     showCursor(player-1);
+  }
+}
+
+//print on the matrix the player's map
+void showPlayerMap(int player, bool playerMap) {
+  lc.clearDisplay(player-1);
+  for (int i = 0; i < 8; i++) {
+    for (int j = 0; j < 8; j++) {
+      if(playerMap){
+        lc.setLed(player-1, i, j, maps[player - 1][i][j]);  
+      }else{
+        lc.setLed(player-1, i, j, playerAttacks[player - 1][i][j]);
+      }
+    }
   }
 }
 
